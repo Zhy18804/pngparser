@@ -2,13 +2,16 @@ PNG INSPECTOR TOOL
 
 inspect png images because there is nothin else better to do 
 
-Flags: 
+Commands: 
 
         --idhr:
-        Inspect IDHR properties of a terminal
+        Inspect IDHR properties 
 
         --chunk:
-        Inspect each of the chunks' length
+        Inspect the chunks
 
-        --dump:
+        --hexdump:
         Dump the raw binary data
+
+        --crc
+        Verify CRC of chunks
