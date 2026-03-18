@@ -18,17 +18,14 @@ int main(int argc, char **argv){
         // check if it is not program name + image file
         printf("Usage: %s --command image name.png\n", argv[0]);
         status = PNG_CMD_ERROR;
-        printf("here1");
-        status_print(status);
-        return status;
+        return status_print(status);
     }
 
     const int result = cmd_check(argv[1]);
 
     if (result == PNG_CMD_ERROR) {
         status = result;
-        status_print(status);
-        return status;
+        return status_print(status);
     }
 
     size_t filesize;
@@ -36,14 +33,12 @@ int main(int argc, char **argv){
 
     if (!buffer) {
         status = PNG_BUFFER_ERROR;
-        status_print(status);
-        return status;
+        return status_print(status);
     }
 
     if (sig_check(buffer) == 1){
         status = PNG_BUFFER_ERROR;
-        status_print(status);
-        return status;
+        return status_print(status);
     }
 
     /*
@@ -63,7 +58,5 @@ int main(int argc, char **argv){
 
     buffer = nullptr;
     free(buffer);
-
-    status_print(status);
-    return status;
+    return status_print(status);
 }

@@ -7,13 +7,6 @@
 // the list of commands
 static const char *cmds[] = {"--idhr","--plte", "--crc","--chunk","--hexdump"};
 
-/*
-might wanna try to concatenate IDAT chunks
-then use zlib to decompress them
-then png filters
-maybe export with ppm format
-*/
-
 // parse user command
 int cmd_check(const char *cmd){
     if (!cmd) {
@@ -28,7 +21,7 @@ int cmd_check(const char *cmd){
     return PNG_CMD_ERROR;
 }
 
-void status_print(int status){
+int status_print(int status){
     switch (status) {
         case PNG_OK:
             break;
@@ -45,6 +38,7 @@ void status_print(int status){
             printf("Unknown Error\n");
             break;
     }
+    return status;
 }
 uint8_t *open_file(const char *filename, size_t *filesize){
     FILE *fptr = fopen(filename,"rb");

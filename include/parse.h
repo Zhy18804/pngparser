@@ -17,6 +17,8 @@ void get_color_type(uint8_t color_type, char **color_type_interpretation);
 
 void print_idhr(const pngchunk *chunk);
 
+int print_plte(const pngchunk *chunk);
+
 void print_chunk(pngchunk *chunk);
 
 int read_chunk(const uint8_t *buffer, size_t *offset, size_t filesize, pngchunk *chunk);

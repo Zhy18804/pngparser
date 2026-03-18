@@ -19,7 +19,7 @@ typedef enum {
 
 int cmd_check(const char *cmd);
 
-void status_print(int status);
+int status_print(int status);
 
 uint8_t *open_file(const char *filename, size_t *filesize);
 
