@@ -28,28 +28,28 @@ void get_color_type(uint8_t color_type, char **color_type_interpretation) {
     }
 }
 
-void print_idhr(const uint8_t *buffer, size_t filesize){
-    size_t idhr_offset = PNG_SIG + SEC_LEN + SEC_LEN;
+void print_idhr(const pngchunk *chunk){
+    size_t idhr_offset = 0;
 
-    uint32_t width  = reading_32to8(buffer, idhr_offset, filesize);
+    uint32_t width = reading_32to8(chunk->data, idhr_offset, 4);
     idhr_offset += 4;
 
-    uint32_t height = reading_32to8(buffer, idhr_offset, filesize);
+    uint32_t height = reading_32to8(chunk->data, idhr_offset, idhr_offset + 4);
     idhr_offset += 4;
             
-    uint8_t bit_depth = buffer[idhr_offset];
+    uint8_t bit_depth = chunk->data[idhr_offset];
     idhr_offset++;
             
-    uint8_t color_type = buffer[idhr_offset];
+    uint8_t color_type = chunk->data[idhr_offset];
     idhr_offset++;
             
-    uint8_t compression = buffer[idhr_offset];
+    uint8_t compression = chunk->data[idhr_offset];
     idhr_offset++;
             
-    uint8_t filter = buffer[idhr_offset];
+    uint8_t filter = chunk->data[idhr_offset];
     idhr_offset++;
             
-    uint8_t interlace = buffer[idhr_offset];
+    uint8_t interlace = chunk->data[idhr_offset];
 
     char* color_type_interpretation;
     get_color_type(color_type, &color_type_interpretation);
@@ -60,33 +60,6 @@ void print_idhr(const uint8_t *buffer, size_t filesize){
     printf("compression = %u\n", compression);
     printf("filter      = %u\n", filter);
     printf("interlace   = %u\n", interlace);
-}
-
-void dump(const uint8_t *buffer, size_t filesize){
-    size_t offset = 0;
-    size_t newline = 0;
-    constexpr size_t hexperline = 32;
-    constexpr size_t offset_digits = 8;
-    constexpr size_t whitespace = 2;
-
-    printf("Offset   | Data\n");
-    // drawing a line
-    for(size_t i = 0; i < (hexperline*3) + offset_digits + whitespace; i++) {
-        printf("-");
-    }
-    printf("\n");
-
-    printf("%08llu  ", offset);
-    while (offset <= filesize) {
-        printf("%02X ", buffer[offset]);
-        newline++;
-        offset++;
-
-        if (newline == hexperline) {
-            newline = 0;
-            printf("\n%08llu  ", offset);
-        }
-   }
 }
 
 void print_chunk(pngchunk *chunk) {
@@ -124,7 +97,7 @@ int read_chunk(const uint8_t *buffer, size_t *offset, size_t filesize, pngchunk 
     *offset += SEC_LEN;
 
     if (chunk->length == UINT32_MAX){
-        return -1;
+        return PNG_CHUNK_ERROR;
     }
 
     //copy type
@@ -133,11 +106,11 @@ int read_chunk(const uint8_t *buffer, size_t *offset, size_t filesize, pngchunk 
     *offset += SEC_LEN;
 
     if (*offset + chunk->length + SEC_LEN > filesize) {
-        return -1;
+        return PNG_CHUNK_ERROR;
     }
 
     if (chunk->type[2] >= 'a' && chunk->type[2] <= 'z') {
-        return -1;
+        return PNG_CHUNK_ERROR;
     }
 
     //copy data
@@ -155,34 +128,37 @@ int read_chunk(const uint8_t *buffer, size_t *offset, size_t filesize, pngchunk 
     *offset += SEC_LEN;
 
     if (chunk->crc == UINT32_MAX) {
-        return -1;
+        return PNG_CHUNK_ERROR;
     }
 
-    return 0;
+    return PNG_OK;
 }
 
-void parse(const uint8_t *buffer,  size_t filesize, int cmd){
+int parse(const uint8_t *buffer,  size_t filesize, int cmd){
 
-    size_t offset = PNG_SIG; 
+    size_t offset = PNG_SIG;
     // offset starts at 8
     
     while (offset + 12 <= filesize){
         pngchunk chunk;
 
         // all chunk values stored in struct
-        if (read_chunk(buffer, &offset, filesize, &chunk) != 0) {
-            printf("error");
-            //perror("Invalid chunk");
-            break;
+        if (read_chunk(buffer, &offset, filesize, &chunk) != PNG_OK) {
+            return PNG_CHUNK_ERROR;
         }
 
-        if (cmd == 0){
-            print_chunk(&chunk);
+        if (cmd == 0 && strncmp(chunk.type, "IHDR", 4) == 0) {
+            print_idhr(&chunk);
         }
 
         if (cmd == 2) {
-            int flag = verify_crc(&chunk);
-            print_crc(&chunk, flag);
+            int status = verify_crc(&chunk);
+            print_crc(&chunk, status);
+        }
+
+        if (cmd == 3){
+            print_chunk(&chunk);
         }
     }
+    return PNG_OK;
 }
