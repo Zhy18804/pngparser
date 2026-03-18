@@ -43,13 +43,13 @@ int verify_crc(const pngchunk *chunk) {
     crc ^= 0xffffffffu;
 
     if (crc == chunk->crc) {
-        return 0;
+        return PNG_OK;
     }
-    return 1;
+    return PNG_CHUNK_ERROR;
 }
 
-void print_crc(const pngchunk *chunk, int flag){
-    if (flag == 0) {
+void print_crc(const pngchunk *chunk, int status){
+    if (status == PNG_OK) {
         printf("%s CRC OK\n", chunk->type);
     } else {
         printf("%s CRC ERROR\n", chunk->type);

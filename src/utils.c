@@ -5,19 +5,12 @@
 #include "..\include\utils.h"
 
 // the list of commands
-static const char *cmds[] = {"--chunk","--hexdump", "--crc","--idhr","--plte", "--text", "--gama", "--phys"};
+static const char *cmds[] = {"--idhr","--plte", "--crc","--chunk","--hexdump"};
 
-/*
-might wanna try to concatenate IDAT chunks
-then use zlib to decompress them
-then png filters
-maybe export with ppm format
-*/
-
-// takes in the command string then returns an int 
+// parse user command
 int cmd_check(const char *cmd){
     if (!cmd) {
-        return -1;
+        return PNG_CMD_ERROR;
     }
 
     for (int i = 0; i < NUM_CMD; i++) {
@@ -25,10 +18,28 @@ int cmd_check(const char *cmd){
             return i;
         }
     }
-    return -1;
+    return PNG_CMD_ERROR;
 }
 
-// opens file of png, extracts the data and modifies filesize arg
+int status_print(int status){
+    switch (status) {
+        case PNG_OK:
+            break;
+        case PNG_CMD_ERROR:
+            printf("Command Error\n");
+            break;
+        case PNG_SIG_ERROR:
+            printf("Signature Error\n");
+            break;
+        case PNG_CHUNK_ERROR:
+            printf("Chunk Error\n");
+            break;
+        default:
+            printf("Unknown Error\n");
+            break;
+    }
+    return status;
+}
 uint8_t *open_file(const char *filename, size_t *filesize){
     FILE *fptr = fopen(filename,"rb");
 
@@ -60,7 +71,7 @@ int sig_check(const uint8_t *buffer){
     if (memcmp(buffer, sig, PNG_SIG) == 0){
         return 0;
     }
-    return 1;
+    return PNG_SIG_ERROR;
 }
 
 uint32_t reading_32to8(const uint8_t *buffer, size_t offset, size_t filesize){
@@ -81,4 +92,31 @@ uint32_t reading_32to8(const uint8_t *buffer, size_t offset, size_t filesize){
     value = value | ((uint32_t)buffer[offset + 3]);
     // 0x12345678
     return value;
+}
+
+void dump(const uint8_t *buffer, size_t filesize){
+    size_t offset = 0;
+    size_t newline = 0;
+    constexpr size_t hexperline = 32;
+    constexpr size_t offset_digits = 8;
+    constexpr size_t whitespace = 2;
+
+    printf("Offset   | Data\n");
+    // drawing a line
+    for(size_t i = 0; i < (hexperline*3) + offset_digits + whitespace; i++) {
+        printf("-");
+    }
+    printf("\n");
+
+    printf("%08llu  ", offset);
+    while (offset <= filesize) {
+        printf("%02X ", buffer[offset]);
+        newline++;
+        offset++;
+
+        if (newline == hexperline) {
+            newline = 0;
+            printf("\n%08llu  ", offset);
+        }
+    }
 }
